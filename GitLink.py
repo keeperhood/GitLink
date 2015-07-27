@@ -28,6 +28,13 @@ REMOTE_CONFIG = {
 
 
 class GitlinkCommand(sublime_plugin.TextCommand):
+    def get_git_binary_path(self):
+        settings = sublime.load_settings('GitLink.sublime-settings')
+        return settings.get("git_path")
+
+    def prepare_git_command(self, command):
+        git_path = self.get_git_binary_path()
+        return "{git_path}/git {command}".format(**locals())
 
     def run(self, edit, **args):
         # Current file path & filename
@@ -37,8 +44,7 @@ class GitlinkCommand(sublime_plugin.TextCommand):
         os.chdir(path + "/")
 
         # Find the repo
-        git_config_path = cmd.getoutput("git remote show origin")
-
+        git_config_path = cmd.getoutput(self.prepare_git_command("remote show origin"))
         p = re.compile(r"(.+@)*([\w\d\.]+):(.*)")
         parts = p.findall(git_config_path)
         site_name = parts[0][1]  # github.com or bitbucket.org, whatever
@@ -59,12 +65,12 @@ class GitlinkCommand(sublime_plugin.TextCommand):
            user, project, repo = git_config.replace(".git", "").split("/")
 
         # Find top level repo in current dir structure
-        folder = cmd.getoutput("git rev-parse --show-toplevel")
+        folder = cmd.getoutput(self.prepare_git_command("rev-parse --show-toplevel"))
         basename = os.path.basename(folder)
         remote_path = path.split(basename, 1)[1]
 
         # Find the current branch
-        branch = cmd.getoutput("git rev-parse --abbrev-ref HEAD")
+        branch = cmd.getoutput(self.prepare_git_command("rev-parse --abbrev-ref HEAD"))
 
         # Build the URL
         if remote_name != 'codebasehq':
