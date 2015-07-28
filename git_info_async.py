@@ -4,6 +4,11 @@ import webbrowser
 import sublime
 import sublime_plugin
 import threading
+try:
+    import commands as cmd
+except:
+    import subprocess as cmd
+from .git_info import GitInfo
 
 class GitInfoAsync(threading.Thread):
     def __init__(self, path, callback):
@@ -35,6 +40,7 @@ class GitInfoAsync(threading.Thread):
 
         git_config = parts[0][2]
 
+        project = False
         # Get username and repository
         if remote_name != 'codebasehq':
             user, repo = git_config.replace(".git", "").split("/")
@@ -49,7 +55,10 @@ class GitInfoAsync(threading.Thread):
         # Find the current branch
         branch = cmd.getoutput(self.prepare_git_command("rev-parse --abbrev-ref HEAD"))
 
-        return GitInfo(user, repo, branch, remote_path, remote_name)
+        # Find the current commit
+        commit = cmd.getoutput(self.prepare_git_command("rev-parse --verify HEAD"))
+
+        return GitInfo(user, repo, branch, remote_path, remote_name, commit, project)
 
     def run(self):
         git_info = self.get_git_info()
