@@ -5,21 +5,8 @@ import sublime
 import sublime_plugin
 import threading
 
-ST3 = int(sublime.version()) > 3000
-
-if ST3:
-    from . import git_info
-    from . import git_info_async
-else:
-    import git_info
-    import git_info_async
-
-# Backwards compatibility
-try:
-    import commands as cmd
-except:
-    import subprocess as cmd
-
+from .git_info import GitInfo
+from .git_info_async import GitInfoAsync
 
 REMOTE_CONFIG = {
     'github': {
@@ -43,12 +30,15 @@ class GitlinkCommand(sublime_plugin.TextCommand):
         branch = git_info.branch
         remote_path = git_info.remote_path
         remote_name = git_info.remote_name
+        commit = git_info.commit
         remote = REMOTE_CONFIG[remote_name]
 
         # Build the URL
-        if remote_name != 'codebasehq':
+        if remote_name == 'github':
             url = remote['url'].format(user, repo, branch, remote_path, self.filename)
-        else:
+        elif remote_name == 'bitbucket':
+            url = remote['url'].format(user, repo, commit, remote_path, self.filename)
+        elif remote_name == 'codebasehq':
             url = remote['url'].format(user, project, repo, branch, remote_path, self.filename)
 
         if(self.line):
